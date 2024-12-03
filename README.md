@@ -1,3 +1,5 @@
+[![Quality Gate Status](http://18.118.1.58:9000/api/project_badges/measure?project=testing&metric=alert_status&token=sqb_f3284f11e2c703c6aa3b5b0b53356810571a66f4)](http://18.118.1.58:9000/dashboard?id=testing)
+
 # Stateful Java Web App
 
 This Java Web app is a STATEFUL Java Web app.
