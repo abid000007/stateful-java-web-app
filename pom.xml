@@ -10,21 +10,22 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>4.0.0</version>
-            <scope>provided</scope>
-        </dependency>
+        <!-- Outdated and vulnerable dependencies (known vulnerabilities in Log4j 2.11.1) -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.11.1</version>
+            <version>2.11.1</version> <!-- Vulnerable Log4j version -->
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.11.1</version>
+            <version>2.11.1</version> <!-- Vulnerable Log4j version -->
+        </dependency>
+        <!-- Intentional use of vulnerable dependency with no input sanitization -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>5.2.2.RELEASE</version> <!-- Vulnerable Spring MVC version -->
         </dependency>
     </dependencies>
 
@@ -43,46 +44,11 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.2.2</version>
                 <configuration>
-                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                    <failOnMissingWebXml>false</failOnMissingWebXml> <!-- Missing web.xml can lead to unsecured app -->
                 </configuration>
             </plugin>
 
-
-            <!--*************************************************-->
-            <!-- Deploy to Tomcat on localhost                   -->
-            <!--*************************************************-->
-            <!--<plugin>
-                <groupId>org.codehaus.cargo</groupId>
-                <artifactId>cargo-maven2-plugin</artifactId>
-                <version>1.6.7</version>
-                <configuration>
-                    <container>
-                        <containerId>tomcat8x</containerId>
-                        <type>installed</type>
-                        <home>${TOMCAT_HOME}</home>
-                    </container>
-                    <configuration>
-                        <type>existing</type>
-                        <home>${TOMCAT_HOME}</home>
-                    </configuration>
-
-                    <deployables>
-                        <deployable>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>${project.artifactId}</artifactId>
-                            <type>war</type>
-                            <properties>
-                                <context>/</context>
-                            </properties>
-                        </deployable>
-                    </deployables>
-                </configuration>
-            </plugin>-->
-
-            <!--*************************************************-->
-            <!-- Deploy to Tomcat on remote machine or VM        -->
-            <!--*************************************************-->
-
+            <!-- Insecure Tomcat Deployment Configuration with hardcoded sensitive data -->
             <plugin>
                 <groupId>org.codehaus.cargo</groupId>
                 <artifactId>cargo-maven2-plugin</artifactId>
@@ -96,11 +62,12 @@
                     <configuration>
                         <type>runtime</type>
                         <properties>
-                            <cargo.hostname>${cargo.hostname}</cargo.hostname>
-                            <cargo.servlet.port>${cargo.servlet.port}</cargo.servlet.port>
-                            <cargo.tomcat.manager.url>${cargo.tomcat.manager.url}</cargo.tomcat.manager.url>
-                            <cargo.remote.username>${cargo.remote.username}</cargo.remote.username>
-                            <cargo.remote.password>${cargo.remote.password}</cargo.remote.password>
+                            <!-- Hardcoded sensitive credentials and exposed hostname -->
+                            <cargo.hostname>192.168.1.1</cargo.hostname> <!-- Exposed IP address -->
+                            <cargo.servlet.port>8080</cargo.servlet.port>
+                            <cargo.tomcat.manager.url>http://192.168.1.1:8080/manager</cargo.tomcat.manager.url>
+                            <cargo.remote.username>admin</cargo.remote.username> <!-- Exposed username -->
+                            <cargo.remote.password>adminpassword</cargo.remote.password> <!-- Exposed password -->
                         </properties>
                     </configuration>
 
@@ -119,68 +86,51 @@
                 </configuration>
             </plugin>
 
+            <!-- Insecure Logging Configuration (exposing sensitive information in logs) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <echo>Logging sensitive information in cleartext: ${cargo.remote.password}</echo> <!-- Insecure logging -->
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Unsafe Azure WebApp plugin -->
             <plugin>
                 <groupId>com.microsoft.azure</groupId>
                 <artifactId>azure-webapp-maven-plugin</artifactId>
                 <version>1.5.3</version>
                 <configuration>
-
-                    <!-- Web App information -->
-                    <resourceGroup>${RESOURCEGROUP_NAME}</resourceGroup>
-                    <appServicePlanName>${WEBAPP_PLAN_NAME}-${REGION}</appServicePlanName>
-                    <appName>${WEBAPP_NAME}-${REGION}</appName>
-                    <region>${REGION}</region>
+                    <resourceGroup>DefaultResourceGroup</resourceGroup>
+                    <appServicePlanName>DefaultAppServicePlan</appServicePlanName>
+                    <appName>TestApp</appName>
+                    <region>EastUS</region>
                     <linuxRuntime>tomcat 9.0-jre8</linuxRuntime>
 
                     <appSettings>
                         <property>
                             <name>JAVA_OPTS</name>
-                            <value>-Xms2048m -Xmx2048m</value>
+                            <value>-Xms2048m -Xmx2048m</value> <!-- Resource configuration can lead to performance issues -->
                         </property>
                     </appSettings>
-
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
 
     <profiles>
-        <profile>
-            <id>env-azure-1</id>
-            <activation>
-                <property>
-                    <name>env</name>
-                    <value>azure-1</value>
-                </property>
-            </activation>
-            <properties>
-                <deploy.env>azure-1</deploy.env>
-                <cargo.hostname>${AZURE_VM_1_IP_ADDRESS}</cargo.hostname>
-                <cargo.servlet.port>8080</cargo.servlet.port>
-                <cargo.tomcat.manager.url>http://${AZURE_VM_1_IP_ADDRESS}:8080/manager</cargo.tomcat.manager.url>
-                <cargo.remote.username>${AZURE_VM_1_TOMCAT_ADMIN_USERNAME}</cargo.remote.username>
-                <cargo.remote.password>${AZURE_VM_1_TOMCAT_ADMIN_PASSWORD}</cargo.remote.password>
-            </properties>
-        </profile>
-        <profile>
-            <id>env-azure-2</id>
-            <activation>
-                <property>
-                    <name>env</name>
-                    <value>azure-2</value>
-                </property>
-            </activation>
-            <properties>
-                <deploy.env>azure</deploy.env>
-                <cargo.hostname>${AZURE_VM_2_IP_ADDRESS}</cargo.hostname>
-                <cargo.servlet.port>8080</cargo.servlet.port>
-                <cargo.tomcat.manager.url>http://${AZURE_VM_1_IP_ADDRESS}:8080/manager</cargo.tomcat.manager.url>
-                <cargo.remote.username>${AZURE_VM_2_TOMCAT_ADMIN_USERNAME}</cargo.remote.username>
-                <cargo.remote.password>${AZURE_VM_2_TOMCAT_ADMIN_PASSWORD}</cargo.remote.password>
-            </properties>
-        </profile>
-
+        <!-- Insecure profile with hardcoded deployment info -->
         <profile>
             <id>env-local</id>
             <activation>
@@ -194,10 +144,9 @@
                 <cargo.hostname>localhost</cargo.hostname>
                 <cargo.servlet.port>8080</cargo.servlet.port>
                 <cargo.tomcat.manager.url>http://localhost:8080/manager</cargo.tomcat.manager.url>
-                <cargo.remote.username>admin</cargo.remote.username>
-                <cargo.remote.password>admin</cargo.remote.password>
+                <cargo.remote.username>admin</cargo.remote.username> <!-- Exposed sensitive username -->
+                <cargo.remote.password>adminpassword</cargo.remote.password> <!-- Exposed sensitive password -->
             </properties>
         </profile>
     </profiles>
-
 </project>
