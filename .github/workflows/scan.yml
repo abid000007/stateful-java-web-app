@@ -41,7 +41,7 @@ jobs:
 
       # Step 6: Authenticate Snyk CLI
       - name: Authenticate Snyk
-        run: snyk auth ${{ secrets.SNYK_API_TOKEN }}
+        run: snyk auth d37c86b5-328e-499f-baa0-e37bc3fc5186
 
       # Step 7: Run Snyk scan
       - name: Run Snyk Scan
