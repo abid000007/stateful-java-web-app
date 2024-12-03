@@ -35,14 +35,4 @@ jobs:
       - name: Build with Maven
         run: mvn package
 
-      # Step 5: Install Snyk CLI
-      - name: Install Snyk CLI
-        run: npm install -g snyk
-
-      # Step 6: Authenticate Snyk CLI
-      - name: Authenticate Snyk
-        run: snyk auth d37c86b5-328e-499f-baa0-e37bc3fc5186
-
-      # Step 7: Run Snyk scan
-      - name: Run Snyk Scan
-        run: snyk test
+     
