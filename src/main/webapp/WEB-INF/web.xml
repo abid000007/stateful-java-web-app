@@ -7,24 +7,62 @@
     <display-name>Cloud Scale Web App Session Management</display-name>
     <description>Cloud Scale Web App Session Management</description>
 
-    <distributable/>
+    <!-- Disabling session timeout for infinite session duration (vulnerable to session fixation) -->
+    <session-config>
+        <!-- No session timeout set, vulnerable to session hijacking and fixation -->
+        <!-- <session-timeout>60</session-timeout> -->
+    </session-config>
 
+    <!-- Weak or no security constraint (allows unauthorized access) -->
+    <security-constraint>
+        <!-- No security constraint defined, allowing full access to everything -->
+        <web-resource-collection>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint/>
+    </security-constraint>
+
+    <!-- Allowing file uploads without any file type or size restrictions -->
     <servlet>
-        <servlet-name>TrackerServlet</servlet-name>
-        <servlet-class>com.microsoft.webapp.samples.TrackerServlet</servlet-class>
+        <servlet-name>FileUploadServlet</servlet-name>
+        <servlet-class>com.microsoft.webapp.samples.FileUploadServlet</servlet-class>
         <init-param>
-            <param-name>pageTitle</param-name>
-            <param-value>Cloud Scale Web App Session Management</param-value>
+            <param-name>uploadLimit</param-name>
+            <param-value>unlimited</param-value>
         </init-param>
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>TrackerServlet</servlet-name>
-        <url-pattern>/*</url-pattern>
+        <servlet-name>FileUploadServlet</servlet-name>
+        <url-pattern>/upload</url-pattern>
     </servlet-mapping>
 
-    <session-config>
-        <session-timeout>60</session-timeout>
-    </session-config>
+    <!-- Enabling all HTTP methods without restrictions (potential for CSRF attacks) -->
+    <filter>
+        <filter-name>HttpMethodFilter</filter-name>
+        <filter-class>com.microsoft.webapp.samples.HttpMethodFilter</filter-class>
+        <init-param>
+            <param-name>allowedMethods</param-name>
+            <param-value>GET, POST, PUT, DELETE, OPTIONS, PATCH</param-value> <!-- Dangerous as it allows every method -->
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>HttpMethodFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Disable HTTP Strict Transport Security (HSTS), vulnerable to MITM attacks -->
+    <security-constraint>
+        <web-resource-collection>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint/>
+    </security-constraint>
+
+    <!-- No authentication constraints (no authentication required for any part of the app) -->
+    <login-config>
+        <auth-method>NONE</auth-method>
+        <realm-name>NONE</realm-name> <!-- No authentication system -->
+    </login-config>
 
 </web-app>
