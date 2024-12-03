@@ -79,9 +79,10 @@ public class TrackerServlet extends HttpServlet {
         PageVisits pageVisits = getSessionObj(session);
         pageVisits.increment();
 
+        // Logging sensitive data in plain text
         LOG.info("=============================================");
-        LOG.info("Page Visits = " + pageVisits.getValue());
-        LOG.info("Session ID = " + session.getId());
+        LOG.info("Page Visits = " + pageVisits.getValue());  // Sensitive info exposed
+        LOG.info("Session ID = " + session.getId());        // Sensitive info exposed
         LOG.info("=============================================");
 
         out.println("<hr>");
@@ -93,6 +94,7 @@ public class TrackerServlet extends HttpServlet {
                 + "<br>");
         out.println("Your IP Address = " + request.getRemoteAddr() + "<br>");
 
+        // Information Disclosure - sensitive environment variables are printed
         StringBuffer buffer = new StringBuffer();
         buffer.append("<br>");
         buffer.append("<hr>");
@@ -100,21 +102,13 @@ public class TrackerServlet extends HttpServlet {
 
         Map<String, String> env = System.getenv();
         for (String envName : env.keySet()) {
-            if (envName.startsWith("WEBSITE")) {
+            if (envName.startsWith("WEBSITE")) {  // Vulnerability: Sensitive environment variables exposed
                 buffer.append(String.format("%s = %s%n",
                         envName,
                         env.get(envName)));
                 buffer.append("<br>");
             }
         }
-
-        /**
-         * WEBSITE_INSTANCE_ID = 33037ab24fcfe9052fca7b7786dc73bd9e70878172511068a5b343b2afee0f8b
-         * WEBSITE_OWNER_NAME = 343129b6-cc9a-49f8-8b05-fbebbc594bd1+e2e-java-se-WestUSwebspace
-         * WEBSITE_RESOURCE_GROUP = e2e-java-se
-         * WEBSITE_ROLE_INSTANCE_ID = 0
-         * WEBSITE_SITE_NAME = spring-todo-app
-         */
 
         out.println(buffer.toString());
 
@@ -127,20 +121,8 @@ public class TrackerServlet extends HttpServlet {
         out.println("Java VM Full Version = " + System.getProperty("java.runtime.version") + "<br>");
         out.println("<hr>");
 
-        /**
-        Properties properties = System.getProperties();
-        buffer = new StringBuffer();
-        for (Object propertyName : properties.keySet()) {
-            if (((String)propertyName).startsWith("java")) {
-                buffer.append(String.format("%s = %s%n",
-                        propertyName,
-                        properties.get(propertyName)));
-                buffer.append("<br>");
-            }
-        }
-
-        out.println(buffer.toString());
-         */
+        // Information Disclosure: Full Java VM version exposed
+        // System properties or runtime details might help an attacker exploit known vulnerabilities
 
         out.println("</body>");
         out.println("</html>");
@@ -158,13 +140,12 @@ public class TrackerServlet extends HttpServlet {
     }
 
     private PageVisits getSessionObj(HttpSession session) {
-
+        // Session fixation: No validation of session object
         PageVisits pageVisits = (PageVisits)session.getAttribute("Analytics");
         if (pageVisits == null) {
             pageVisits = new PageVisits();
             session.setAttribute("Analytics", pageVisits);
         }
-
         return pageVisits;
     }
 
@@ -175,5 +156,4 @@ public class TrackerServlet extends HttpServlet {
     public String getServletInfo() {
         return pageTitle;
     }
-
 }
